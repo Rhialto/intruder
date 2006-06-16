@@ -1,0 +1,135 @@
+.\"	$NetBSD$
+.\"
+.\" Copyright (c) 1983, 2006
+.\"	Olaf Seibert All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"
+.Dd June 9, 2006
+.Dt INTRUDER 6
+.Os
+.Sh NAME
+.Nm intruder
+.Nd go to the safe, steal the secret documents, and escape
+.Sh SYNOPSIS
+.Nm
+.Op Fl d Ar delay
+.Op Fl f
+.Op Fl r
+.\" .Op Fl d
+.Sh DESCRIPTION
+The following options are available:
+.Bl -tag -width indent
+.It Fl d Ar delay
+When designing the maze, do it slowly so you can see it.
+.It Fl f
+Fast start, no autoplay at the start.
+.It Fl r
+Rogue keyboard mode.
+.El
+.\" .Op Fl d
+.Pp
+.Nm
+is a pac-man-like game with a new twist.
+It is CRT oriented and the object of the game is to go through a maze,
+find the safe,
+steal the documents
+.Ic \&Q
+\&,
+and return safely outside.
+.Pp
+There are, of course,
+some details that make this more difficult than it seems.
+.Pp
+When you start the program without the
+.Fl f
+option, you get a demo game first.
+The auto-pilot algorithm is not very smart,
+but sometimes it manages to win.
+.Pp
+When you hit any key, you proceed to a short manual page (in Dutch),
+and you can choose the number of guards.
+Valid are 1-9 and 10-35 (with the 'a' through 'z' keys).
+.Pp
+Then the maze is built, and you can begin with your noble task of
+liberating the secret documents.
+.Pp
+You move around with the numbers 1-9 of the numeric keypad,
+or hjkl and yubn for diagonal movent as in rogue,
+or (for convenience on laptops without numberic keypad) with the arrow
+keys and Home/PgUp/End/PgDn for 7/9/1/3.
+.Pp
+There are guards
+.Ic \&$
+in the maze.
+If they see you, they may approach you,
+and if they catch you, you have lost.
+Guards can move only horizontally and vertically.
+You can choose how many guards there are;
+the more guards, the more you can score.
+.Pp
+You need to eat points
+.Ic \&:
+from the floor.
+If you move around, you lose points.
+If you have no points left over, you have lost.
+.Pp
+The maze changes.
+Walls
+.Ic \&+
+and points
+.Ic \&:
+can change into each other.
+This means that a wall between you and a guard may suddenly not be a
+protection anymore.
+It may also mean you get locked in.
+.Pp
+As a protection against guards, you can place blockades
+.Ic \& Z
+\&.
+Guards cannot go through them, but you can.
+Hovever, the number of blockades is limited, and depends on the number
+of guards (and on how many you recycle).
+You can place blockades in empty spots, points, and walls.
+You do this by typing a
+.Ic b
+command (or
+.Ic B
+in rogue mode) and then a direction.
+.Pp
+If
+.\"you have got the documents and
+you have cleared the level sufficiently, 
+you will be offered to go to a new level.
+If you accept, the maze is drawn anew and you can continue to score
+many more points.
+.Sh AUTHOR
+.An Olaf 'Rhialto' Seibert
+.Sh HISTORY
+The orginal version was written circa 1983 for the Commodore PET.
+.Sh BUGS
+This version misses the PET graphics characters and
+the nifty typeahead-free autorepeat feature.

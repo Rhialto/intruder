@@ -1,0 +1,166 @@
+
+
+intruder10,prg ==0401==
+   10 d0=2:m%=1+rnd(1)*9:vb=1
+   20 poke59468,12:print"{swuc}":goto110
+  100 gosub8000
+  110 hm=32768:print"{clr}{down}a":wd=40:ifpeek(hm+wd)<>1thenwd=80
+  120 i0=j0=i1=i=j=0:xy=hm+6*wd-10:jy=42:sk=10:sp=32:mr=91:pn=58:be=36:bl=90
+  130 en=81:ab=2*m%:dimxy(9),d(4),a(3):d(1)=wd:d(2)=-1:d(3)=1:d(4)=-wd
+  140 gosub 9000
+  159 rem"{sret}{up}----------{rvon}plaats speler en bewakers
+  160 pokexy,jy:fori=1tom%
+  170 j=hm+3*wd+1+int((wd-9)*rnd(1))+wd*int(17*rnd(1)):ifpeek(j)<>pnthen170
+  180 pokej,be:xy(i)=j:next
+  199 rem"{sret}{up}----------{rvon}beweeg speler
+  200 pokexy,jy+128:ifvb=1thengosub2000:goto230
+  205 dx=0:t=35:gosub1000:ifin$="q"then8510
+  210 ifin$="b"thengosub2500:goto205
+  220 gosub1100
+  230 ifdxthensk=sk-1:ifsk<0then8540
+  240 pw=peek(xy+dx):ifpw<>spthen500
+  250 pokexy,sp:xy=xy+dx:pokexy,jy
+  259 rem"{sret}{up}----------{rvon}beweeg bewakers
+  260 gosub1050:fori=1tom%:j=0
+  280 j=j+1:dx=d(1+rnd(1)*4):pw=peek(xy(i)+dx):ifpw<>spandpw<>pnandj<5then280
+  285 ifj>4thendx=0
+  290 pokexy(i),sp:xy(i)=xy(i)+dx:pokexy(i),be
+  300 next
+  309 rem"{sret}{up}----------{rvon}test aanwezigheid bewakers
+  310 fori=1to4:dx=d(i):forj=1to10
+  320 i0=xy+dx*j:pw=peek(i0):ifpw<>bethen400
+  330 j0=0:fori1=1tom%:ifi0=xy(i1)thenj0=i1:i1=m%
+  340 next:ifj0=0then400
+  350 xy(j0)=xy(j0)-dx:pokei0,sp:pokei0-dx,be
+  360 ifxy(j0)=xythen8500
+  400 ifpw<>spandpw<>pnthenj=10
+  410 nextj:nexti:fori=0to1
+  419 rem"{sret}{up}----------{rvon}verander doolhof
+  420 j=hm+3*wd+1+int((wd-11)*rnd(1))+wd*int(17*rnd(1)):pw=peek(j)
+  430 ifpw<>pnandpw<>mrthen450
+  440 pokej,pn+i*(mr-pn)
+  450 next:goto200
+  499 rem"{sret}{up}----------{rvon}verwerk tekens
+  500 ifpw=blthenab=ab+.25:goto250
+  510 ifpw=bethensk=sk+150:pokexy+dx,be+128
+  530 ifpw=enande1=0then8520
+  540 ifpw=enthen8530
+  550 ifpw=pnthen700
+  600 dx=0:goto250
+  699 rem"{sret}{up}----------{rvon}vrij spel???
+  700 sk=sk+int(4+m%/2):ap=ap+1:ifap<4*wdthen250
+  710 print"{home}wil je een vrij spel (j/n)? ";:t=1e9:ifvbthen720
+  715 gosub1010:ifin$="n"thenprint"nee":goto8550
+  716 ifin$<>"j"then715
+  720 print"ja":xy=hm+6*wd-10:gosub9010:ap=0:e1=0:ab=ab+2*m%:gosub8995:goto160
+  999 rem"{rvs-shift-m}{up}{10 -}{rvs} *tekst*
+ 1000 ifpeek(158)=0thenpoke151,0
+ 1010 t1=ti
+ 1011 getin$:ifin$=""andti-t1<tthen1011
+ 1015 return
+ 1050 print"{home}{down}{down}{down}{rvon}"tab(wd-9);right$("     "+mid$(str$(sk),2),5):return
+ 1100 ifin$="1"thendx=wd-1
+ 1110 ifin$="2"thendx=wd
+ 1120 ifin$="3"thendx=wd+1
+ 1130 ifin$="4"thendx=-1
+ 1140 ifin$="6"thendx=1
+ 1150 ifin$="7"thendx=-wd-1
+ 1160 ifin$="8"thendx=-wd
+ 1170 ifin$="9"thendx=-wd+1
+ 1180 return
+ 1999 rem"{sret}{up}----------{rvon}auto spel
+ 2000 getin$:ifin$then run100
+ 2010 j=d0
+ 2020 dx=a(d0)/2:gosub2110:ifi=1then1050
+ 2025 d0=d0-1:ifd0<0thend0=3
+ 2030 ifd0<>jthen2020
+ 2100 print"{home}ik geef het  op,   want  ik  heb  geen  blokkades meer!":t=60:goto8990
+ 2110 i=0:pw=peek(xy+dx):ifpw=sporpw=enorpw=pntheni=1
+ 2120 ifi=1thend0=d0+1:ifd0>3thend0=0
+ 2130 return
+ 2500 ifab<1thenprint"{home}je hebt geen blokkades meer!":t=60:goto8990
+ 2505 print"{home}druk  richtingtoets  voor  blokkade  (0 voor geen)
+ 2510 t=1e9:gosub1010:dx=0:gosub1100
+ 2520 pw=peek(xy+dx):ifdx=0then2600
+ 2525 ifpw<>mrandpw<>spandpw<>pnthengosub8995:goto2500
+ 2530 pokexy+dx,bl:ab=ab-1
+ 2600 gosub8995:return
+ 7500 a(0)=2:a(1)=-2*wd:a(2)=-2:a(3)=2*wd
+ 7520 a=xy-1:pokea,4:rem begin doolhof
+ 7550 j=int(rnd(1)*4):x=j
+ 7560 b=a+a(j):ifpeek(b)=mrthenpokeb,j:pokea+a(j)/2,pn:a=b:goto7550
+ 7570 j=(j+1)*-(j<3):ifj<>xthen7560
+ 7580 j=peek(a):pokea,pn:ifj<4thena=a-a(j):goto7550
+ 7590 return
+ 8000 print"{clr}intruder          kosmos s#28 v29.03.83"
+ 8010 forj=1to39:print"{CBM-T}";:next:print
+ 8015 print"       {CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}
+ 8017 print"       {rvon}puntentelling{rvof}:{down}
+ 8020 print"         jij *
+ 8030 print"    blokkade Z houdt bewakers tegen
+ 8035 print"dubbele punt : 3-7 afh van # bewakers
+ 8040 print"  dokumenten Q 75 of 100
+ 8050 print"     bewaker $ 150
+ 8060 print"{down}{down}spel afgelopen als:
+ 8070 print"{down}-Q bij uitgang gepakt, of
+ 8080 print"-geen punten meer, of
+ 8090 print"-$ grijpt jou (je skore halveert dan!)
+ 8100 print"de dan behaalde skore telt.
+ 8190 print"{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}
+ 8200 print"{rvon}hoeveel bewakers wil je {1-9}?
+ 8210 t=1e9:gosub1010:m%=val(in$):ifm%<1orm%>9then8210
+ 8220 return
+ 8500 fori=0to99:pokexy,jy::::::pokexy,be+128:::::::next:sk=int(sk/2):gosub1050
+ 8505 print"{home}de bewaker heeft je gevangen: het spel  is afgelopen.":goto8550
+ 8510 print"{home}je hebt het opgegeven. jammer....":sk=int(sk/2):goto8550
+ 8520 print"{home}maak nu dat je weer buiten komt{home}{down}{down}{down}{down}{down}"tab(wd-10)"Q->uit":e1=1
+ 8521 sk=sk+100:gosub1050:t=60:gosub8990:goto250
+ 8530 print"{home}je opdrachtgevers zijn je zeer dankbaar!":pokexy,sp:pokexy+dx,jy
+ 8531 sk=sk+100:gosub1050:t=60:goto8550
+ 8540 print"{home}je punten zijn op: je hebt verloren
+ 8550 ifvb=1thent=120:gosub8990:run
+ 8555 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}"tab(wd-9)"{rvon}wil je
+ 8560 printtab(wd-9)"{rvon}nog{down}{left}{left}{left}eens?{down}{left}{left}{left}{left}{left}(j/n)
+ 8570 t=1e9:gosub1010:ifin$="j"thenrun100
+ 8580 ifin$<>"n"then8570
+ 8590 print"{clr}":end
+ 8990 :t1=ti:fori=-1to0:i=(ti-t1<t):next
+ 8995 print"{home}";:fori=1to35:print"  ";:next:print:return
+ 9000 print"{clr}ga  naar  de  kluis  en  steel  geheime dokumenten (Q)...
+ 9010 in$="{CBM-Q}[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
+ 9011 ifwd=80thenin$=in$+"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
+ 9020 print"{home}{down}{down}{CBM-A}";:fori=1to(wd-10)/10:print"{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}{CBM-R}";:next:print"{left}{CBM-S}{CBM-@}{CBM-@}{CBM-@}{CBM-@}{CBM-@}
+ 9025 printin$;"{CBM-W}":gosub1050
+ 9030 printin$;"[@@@@@{CBM-S}
+ 9040 printin$;" <- in]
+ 9050 printin$;"[{CBM-S}gang]
+ 9060 printin$;"{CBM-W}{CBM-Z}@@@@{CBM-X}
+ 9070 printin$;"{CBM-W}
+ 9080 printin$;"{CBM-W}
+ 9090 printin$;"{CBM-W}
+ 9100 printin$;"{CBM-W}
+ 9110 printin$;"{CBM-W}
+ 9120 printin$;"{CBM-W}{rvon}b{rvof}lok-
+ 9130 printin$;"{CBM-W} kade
+ 9140 printin$;"{CBM-W}{rvon}q{rvof}uit
+ 9150 printin$;"{CBM-W}  8
+ 9160 printin$;"{CBM-W} {CBM-A}{CBM-E}{CBM-S}
+ 9170 printin$;"{CBM-W}4{CBM-W}{rvon}*{rvof}{CBM-Q}6
+ 9180 printin$;"{CBM-W} {CBM-Z}{CBM-R}{CBM-X}
+ 9190 print"{CBM-Z}";:fori=1to(wd-10)/10:print"{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}{CBM-E}";:next:print"{left}{CBM-X}  2
+ 9195 i=(wd-40)/2
+ 9200 printtab(i)"$=bewaker      *=jij     Q=doel
+ 9205 printtab(i)"     ***{rvon}even geduld aub{rvof}***{up}":gosub7500
+ 9210 printtab(i);:forj=1to19:print"  ";:next:print
+ 9215 ifvb=1thenprinttab(i)"***{rvon}voorbeeld{rvof}***{rvon}druk 'n toets{rvof}***
+ 9220 print"{home}{down}{down}":fori=1to12*rnd(1):print"{down}";:next:i=1+(wd-17)*rnd(1)
+ 9230 printtab(i)"{CBM-+}{CBM-+}{CBM-+} {CBM-+}{CBM-+}{CBM-+}
+ 9240 printtab(i)"{CBM-+} Z Z {CBM-+}
+ 9250 printtab(i)"   Q   "
+ 9260 printtab(i)"{CBM-+} Z Z {CBM-+}
+ 9270 printtab(i)"{CBM-+}{CBM-+}{CBM-+} {CBM-+}{CBM-+}{CBM-+}
+ 9280 ifrnd(1)>.02then9490
+ 9290 be=sp+64:gosub8995:print"{home}pech: de bewakers zijn onzichtbaar deze keer
+ 9300 sk=sk+90:gosub1050
+ 9490 ti$="000000":t=60:goto8990
+
