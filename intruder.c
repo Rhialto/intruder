@@ -1,4 +1,6 @@
 /*
+ * $Id: intruder.c,v 1.2 2006/06/24 09:28:08 rhialto Exp $
+ *
  * Intruder.
  *
  * Based on "intruder          kosmos s#28 v29.03.83"
@@ -20,7 +22,11 @@ struct xy {
 int maze_delay_option;
 int no_autoplay_option;
 int rogue_option;
+int use_ascii_option;
 chtype blockade_key;
+chtype acs_plus, acs_lrcorner, acs_urcorner, acs_llcorner, acs_ulcorner,
+       acs_hline, acs_ttee, acs_btee, acs_vline, acs_rtee, acs_ltee,
+       acs_diamond, acs_ckboard, acs_block;
 
 void intruder(int lineno);
 void make_maze();
@@ -39,7 +45,8 @@ void line_2110();
 
 int number_of_guards;		/* m% */
 int hm, i, j, jy, sk, sp, me, pn, be, bl;
-int en, vb, e1, ap;
+int vb, e1, ap;
+chtype en;
 int wd, ho, mr, pw, t, d0;
 int inchar;
 float ab;
@@ -131,8 +138,11 @@ main(int argc, char **argv)
     extern char *optarg;
     extern int optind;
 
-    while ((ch = getopt(argc, argv, "fd:r")) != -1) {
+    while ((ch = getopt(argc, argv, "afd:r")) != -1) {
 	switch (ch) {
+	case 'a':
+	    use_ascii_option = 1;
+	    break;
 	case 'd':
 	    maze_delay_option = atoi(optarg);
 	    break;
@@ -152,8 +162,42 @@ main(int argc, char **argv)
 
     blockade_key = rogue_option ? 'B' : 'b';
 
-    srandom((unsigned long)time(NULL));
     initscr();
+
+    if (use_ascii_option) {
+	acs_plus = '+';
+	acs_ulcorner = '.';
+	acs_urcorner = '.';
+	acs_llcorner = '`';
+	acs_lrcorner = '\'';
+	acs_hline = '-';
+	acs_btee = '-';
+	acs_ttee = '-';
+	acs_vline = '|';
+	acs_rtee = '|';
+	acs_ltee = '|';
+	acs_diamond = 'Z';
+	acs_ckboard = '#';
+	acs_block = 'O';
+    } else {
+	/* must be used after initscr */
+	acs_plus = ACS_PLUS;
+	acs_ulcorner = ACS_ULCORNER;
+	acs_urcorner = ACS_URCORNER;
+	acs_llcorner = ACS_LLCORNER;
+	acs_lrcorner = ACS_LRCORNER;
+	acs_hline = ACS_HLINE;
+	acs_btee = ACS_BTEE;
+	acs_ttee = ACS_TTEE;
+	acs_vline = ACS_VLINE;
+	acs_rtee = ACS_RTEE;
+	acs_ltee = ACS_LTEE;
+	acs_diamond = ACS_DIAMOND;
+	acs_ckboard = ACS_CKBOARD;
+	acs_block = ACS_BLOCK;
+    }
+
+    srandom((unsigned long)time(NULL));
     signal(SIGINT, sigint);
     cbreak();
     noecho();
@@ -176,6 +220,13 @@ intruder10,prg ==0401==
    20 poke59468,12:print"{swuc}":goto110
   100 gosub8000
  */
+    jy = '*';
+    sp = ' ';	/* spatie: vrije plek */
+    mr = acs_plus;	/* muur */
+    pn = ':';	/* punt */
+    be = '$';	/* bewaker */
+    bl = acs_diamond;	/* blokkade */
+    en = acs_block;	/* eind - dokumenten */
     if (lineno < 100 && !no_autoplay_option) {
 	d0 = 2;
 	number_of_guards = 1 + random() % 9;
@@ -197,16 +248,7 @@ line_110:
 	refresh();
 	return;
     }
-    player_pos.y = 5;
-    player_pos.x = wd - 10;
-    jy = '*';
     sk = 10;	/* skore */
-    sp = ' ';	/* spatie: vrije plek */
-    mr = '+';	/* muur */
-    pn = ':';	/* punt */
-    be = '$';	/* bewaker */
-    bl = 'Z';	/* blokkade */
-    en = 'Q';	/* eind - dokumenten */
     ab = 2 * number_of_guards;	/* aantal blokkades */
 /*
   140 gosub 9000
@@ -219,208 +261,212 @@ line_110:
   170 j=hm+3*wd+1+int((wd-9)*rnd(1))+wd*int(17*rnd(1)):ifpeek(j)<>pnthen170
   180 pokej,be:xy(i)=j:next
  */
-line_160:
-    screenpoke(player_pos, jy);
-    for (i = 1; i <= number_of_guards; i++) {
-	struct xy j;
-	do {
-	    j.x = 1 + random() % (wd - 9);
-	    j.y = 3 + random() % (ho - 8);
-	} while (screenpeek(j) != pn);
-	screenpoke(j, be);
-	a_xy[i] = j;
-    }
-/*
-  199 rem"{sret}{up}----------{rvon}beweeg speler
-  200 pokexy,jy+128:ifvb=1thengosub2000:goto230
-  205 dx=0:t=35:gosub1000:ifin$="q"then8510
-  210 ifin$="b"thengosub2500:goto205
-  220 gosub1100
-  230 ifdxthensk=sk-1:ifsk<0then8540
-  240 pw=peek(xy+dx):ifpw<>spthen500
-  250 pokexy,sp:xy=xy+dx:pokexy,jy
- */
     for (;;) {
-    /* line_200: */
-	screenpoke(player_pos,jy|A_REVERSE);
-	if (vb) {
-	    auto_pilot();
-	} else {
-    line_205:
-	    dx.x = dx.y = 0;
-	    inchar = input_with_timeout(40 * 1000 / 60);
-	    if (inchar == 'q')
-		goto line_8510;
-	    if (inchar == blockade_key) {
-		place_blockade();
-		goto line_205;
-	    }
-	    getdx();
-	}
-
-	if (dx.x || dx.y) {
-	    sk--;
-	    if (sk < 0)
-		goto line_8540;
-	}
-	pw = screenpeek(add_xy(player_pos, dx));
-	if (pw != sp) {
-	/*
-	499 rem"{sret}{up}----------{rvon}verwerk tekens
-	500 ifpw=blthenab=ab+.25:goto250
-	510 ifpw=bethensk=sk+150:pokexy+dx,be+128
-	530 ifpw=enande1=0then8520
-	540 ifpw=enthen8530
-	550 ifpw=pnthen700
-	600 dx=0:goto250
-	*/
-	    if (pw == bl) {
-		ab += 1/4;
-	    } else if (pw == be) {
-		sk += 150;
-		screenpoke(add_xy(player_pos, dx), be|A_REVERSE);
-		dx.x = dx.y = 0;
-	    } else if (pw == en && e1 == 0) {
-	    /*
-	    8520 print"{home}maak nu dat je weer buiten komt{home}{down}{down}{down}{down}{down}"tab(wd-10)"Q->uit":e1=1
-	    8521 sk=sk+100:gosub1050:t=60:gosub8990:goto250
-	    */
-		mvaddstr(0, 0, "maak nu dat je weer buiten komt");
-		mvaddstr(5, wd-10, "Q->uit");
-		refresh();
-		e1 = 1;
-		sk += 100;
-		print_score();
-		clear_topline(60);
-	    } else if (pw == en) {
-		goto line_8530;
-	    } else if (pw == pn) {
-		goto line_700;
-	    } else {
-		dx.x = dx.y = 0;
-	    }
-	}
-    line_250:
-	screenpoke(player_pos, sp);
-	player_pos = add_xy(player_pos, dx);
 	screenpoke(player_pos, jy);
-	usleep(100*1000);
-    /*
-    259 rem"{sret}{up}----------{rvon}beweeg bewakers
-    260 gosub1050:fori=1tom%:j=0
-    280 j=j+1:dx=d(1+rnd(1)*4):pw=peek(xy(i)+dx):ifpw<>spandpw<>pnandj<5then280
-    285 ifj>4thendx=0
-    290 pokexy(i),sp:xy(i)=xy(i)+dx:pokexy(i),be
-    300 next
-    */
-	print_score();
 	for (i = 1; i <= number_of_guards; i++) {
-	    j = 0;
+	    struct xy j;
 	    do {
-		j++;
-		dx = a_a[random() % 4];
-		pw = screenpeek(add_xy(a_xy[i], dx));
-	    } while (pw != sp && pw != pn && j < 5);
-	    if (j > 4)
-		dx.x = dx.y = 0;
-	    screenpoke(a_xy[i], sp);
-	    a_xy[i] = add_xy(a_xy[i], dx);
-	    screenpoke(a_xy[i], be);
-	}
-    /*
-    309 rem"{sret}{up}----------{rvon}test aanwezigheid bewakers
-    310 fori=1to4:dx=d(i):forj=1to10
-    320 i0=xy+dx*j:pw=peek(i0):ifpw<>bethen400
-    330 j0=0:fori1=1tom%:ifi0=xy(i1)thenj0=i1:i1=m%
-    340 next:ifj0=0then400
-    350 xy(j0)=xy(j0)-dx:pokei0,sp:pokei0-dx,be
-    360 ifxy(j0)=xythen8500
-    400 ifpw<>spandpw<>pnthenj=10
-    410 nextj:nexti:fori=0to1
-    */
-	for (i = 0; i < 4; i++) {		/* i is the direction index */
-	    dx = a_a[i];
-	    struct xy i0 = player_pos;
-	    for (j = 1; j <= 10; j++) {	/* j is the distance */
-		i0 = add_xy(i0, dx);	/* i0 is the examined l0cation */
-		pw = screenpeek(i0);
-		if (pw == be) {
-		    int i1;
-		    int j0 = 0;
-
-		    for (i1 = 1; i1 <= number_of_guards; i1++) {
-			if (equal_xy(i0, a_xy[i1])) {
-			    j0 = i1;	/* j0 is the guard that saw us */
-			    i1 = number_of_guards;
-			}
-		    }
-		    if (j0) {
-			a_xy[j0] = subtract_xy(a_xy[j0], dx);
-			screenpoke(i0, sp);
-			screenpoke(a_xy[j0], be);
-			if (equal_xy(a_xy[j0], player_pos))
-			    goto line_8500;
-		    }
-		} else if (pw != sp && pw != pn) {
-		    j = 10;
-		}
-	    }
-	}
-    /*
-    419 rem"{sret}{up}----------{rvon}verander doolhof
-    420 j=hm+3*wd+1+int((wd-11)*rnd(1))+wd*int(17*rnd(1)):pw=peek(j)
-    430 ifpw<>pnandpw<>mrthen450
-    440 pokej,pn+i*(mr-pn)
-    450 next:goto200
-    */
-	for (j = (ho / 15); j > 0; j--) {	/* when ho==25, j must be 1 */
-	    for (i = 0; i <= 1; i++) {
-		struct xy j;
-		j.x = 1 + random() % (wd - 11);
+		j.x = 1 + random() % (wd - 9);
 		j.y = 3 + random() % (ho - 8);
-		pw = screenpeek(j);
-		if (pw == pn || pw == mr) {
-		    screenpoke(j, pn + i * (mr - pn));
+	    } while (screenpeek(j) != pn);
+	    screenpoke(j, be);
+	    a_xy[i] = j;
+	}
+    /*
+    199 rem"{sret}{up}----------{rvon}beweeg speler
+    200 pokexy,jy+128:ifvb=1thengosub2000:goto230
+    205 dx=0:t=35:gosub1000:ifin$="q"then8510
+    210 ifin$="b"thengosub2500:goto205
+    220 gosub1100
+    230 ifdxthensk=sk-1:ifsk<0then8540
+    240 pw=peek(xy+dx):ifpw<>spthen500
+    250 pokexy,sp:xy=xy+dx:pokexy,jy
+    */
+	for (;;) {
+	/* line_200: */
+	    screenpoke(player_pos,jy|A_REVERSE);
+	    refresh();
+	    if (vb) {
+		auto_pilot();
+	    } else {
+	line_205:
+		dx.x = dx.y = 0;
+		inchar = input_with_timeout(40 * 1000 / 60);
+		if (inchar == 'q')
+		    goto line_8510;
+		if (inchar == blockade_key) {
+		    place_blockade();
+		    goto line_205;
+		}
+		getdx();
+	    }
+
+	    if (dx.x || dx.y) {
+		sk--;
+		if (sk < 0)
+		    goto line_8540;
+	    }
+	    pw = screenpeek(add_xy(player_pos, dx));
+	    if (pw != sp) {
+	    /*
+	    499 rem"{sret}{up}----------{rvon}verwerk tekens
+	    500 ifpw=blthenab=ab+.25:goto250
+	    510 ifpw=bethensk=sk+150:pokexy+dx,be+128
+	    530 ifpw=enande1=0then8520
+	    540 ifpw=enthen8530
+	    550 ifpw=pnthen700
+	    600 dx=0:goto250
+	    */
+		if (pw == bl) {
+		    ab += 1/4;
+		} else if (pw == be) {
+		    sk += 150;
+		    screenpoke(add_xy(player_pos, dx), be|A_REVERSE);
+		    refresh();
+		    dx.x = dx.y = 0;
+		} else if (pw == en && e1 == 0) {
+		/*
+		8520 print"{home}maak nu dat je weer buiten komt{home}{down}{down}{down}{down}{down}"tab(wd-10)"Q->uit":e1=1
+		8521 sk=sk+100:gosub1050:t=60:gosub8990:goto250
+		*/
+		    mvaddstr(0, 0, "maak nu dat je weer buiten komt");
+		    move(5, wd-10); addch(en); addstr("->uit");
+		    /* refresh(); done in print_score */
+		    e1 = 1;
+		    sk += 100;
+		    print_score();
+		    clear_topline(60);
+		} else if (pw == en) {
+		    goto line_8530;
+		} else if (pw == pn) {
+		    goto line_700;
+		} else {
+		    dx.x = dx.y = 0;
 		}
 	    }
-	}
-	/* goto line_200; */
-    }
-/*
-  699 rem"{sret}{up}----------{rvon}vrij spel???
-  700 sk=sk+int(4+m%/2):ap=ap+1:ifap<4*wdthen250
-  710 print"{home}wil je een vrij spel (j/n)? ";:t=1e9:ifvbthen720
-  715 gosub1010:ifin$="n"thenprint"nee":goto8550
-  716 ifin$<>"j"then715
-  720 print"ja":xy=hm+6*wd-10:gosub9010:ap=0:e1=0:ab=ab+2*m%:gosub8995:goto160
- */
-line_700:
-    sk += 4 + number_of_guards/2;
-    ap++;
-    if (ap < (ho / 6) * wd)		/* when ho==25, must be 4*wd */
-	goto line_250;
-    mvaddstr(0, 0, "wil je een vrij spel (j/n)? ");
-    if (!vb) {
-	do {
-	    inchar = input_with_timeout(-1);
-	    if (inchar == 'n') {
-		addstr("nee");
-		refresh();
-		ap = 0; goto line_250;	/* was 8550 */
-		goto line_8550;
+	line_250:
+	    screenpoke(player_pos, sp);
+	    player_pos = add_xy(player_pos, dx);
+	    screenpoke(player_pos, jy);
+	    refresh();
+	    usleep(100*1000);
+	/*
+	259 rem"{sret}{up}----------{rvon}beweeg bewakers
+	260 gosub1050:fori=1tom%:j=0
+	280 j=j+1:dx=d(1+rnd(1)*4):pw=peek(xy(i)+dx):ifpw<>spandpw<>pnandj<5then280
+	285 ifj>4thendx=0
+	290 pokexy(i),sp:xy(i)=xy(i)+dx:pokexy(i),be
+	300 next
+	*/
+	    print_score();
+	    for (i = 1; i <= number_of_guards; i++) {
+		j = 0;
+		do {
+		    j++;
+		    dx = a_a[random() % 4];
+		    pw = screenpeek(add_xy(a_xy[i], dx));
+		} while (pw != sp && pw != pn && j < 5);
+		if (j > 4)
+		    dx.x = dx.y = 0;
+		screenpoke(a_xy[i], sp);
+		a_xy[i] = add_xy(a_xy[i], dx);
+		screenpoke(a_xy[i], be);
 	    }
-	} while (inchar != 'j');
+	    refresh();
+	/*
+	309 rem"{sret}{up}----------{rvon}test aanwezigheid bewakers
+	310 fori=1to4:dx=d(i):forj=1to10
+	320 i0=xy+dx*j:pw=peek(i0):ifpw<>bethen400
+	330 j0=0:fori1=1tom%:ifi0=xy(i1)thenj0=i1:i1=m%
+	340 next:ifj0=0then400
+	350 xy(j0)=xy(j0)-dx:pokei0,sp:pokei0-dx,be
+	360 ifxy(j0)=xythen8500
+	400 ifpw<>spandpw<>pnthenj=10
+	410 nextj:nexti:fori=0to1
+	*/
+	    for (i = 0; i < 4; i++) {		/* i is the direction index */
+		dx = a_a[i];
+		struct xy i0 = player_pos;
+		for (j = 1; j <= 10; j++) {	/* j is the distance */
+		    i0 = add_xy(i0, dx);	/* i0 is the examined l0cation */
+		    pw = screenpeek(i0);
+		    if (pw == be) {
+			int i1;
+			int j0 = 0;
+
+			for (i1 = 1; i1 <= number_of_guards; i1++) {
+			    if (equal_xy(i0, a_xy[i1])) {
+				j0 = i1;	/* j0 is the guard that saw us */
+				i1 = number_of_guards;
+			    }
+			}
+			if (j0) {
+			    a_xy[j0] = subtract_xy(a_xy[j0], dx);
+			    screenpoke(i0, sp);
+			    screenpoke(a_xy[j0], be);
+			    refresh();
+			    if (equal_xy(a_xy[j0], player_pos))
+				goto line_8500;
+			}
+		    } else if (pw != sp && pw != pn) {
+			j = 10;
+		    }
+		}
+	    }
+	/*
+	419 rem"{sret}{up}----------{rvon}verander doolhof
+	420 j=hm+3*wd+1+int((wd-11)*rnd(1))+wd*int(17*rnd(1)):pw=peek(j)
+	430 ifpw<>pnandpw<>mrthen450
+	440 pokej,pn+i*(mr-pn)
+	450 next:goto200
+	*/
+	    for (j = (ho / 15); j > 0; j--) {	/* when ho==25, j must be 1 */
+		for (i = 0; i <= 1; i++) {
+		    struct xy j;
+		    j.x = 1 + random() % (wd - 11);
+		    j.y = 3 + random() % (ho - 8);
+		    pw = screenpeek(j);
+		    if (pw == pn || pw == mr) {
+			screenpoke(j, pn + i * (mr - pn));
+		    }
+		}
+	    }
+	    refresh();
+	    /* goto line_200; */
+	}
+    /*
+    699 rem"{sret}{up}----------{rvon}vrij spel???
+    700 sk=sk+int(4+m%/2):ap=ap+1:ifap<4*wdthen250
+    710 print"{home}wil je een vrij spel (j/n)? ";:t=1e9:ifvbthen720
+    715 gosub1010:ifin$="n"thenprint"nee":goto8550
+    716 ifin$<>"j"then715
+    720 print"ja":xy=hm+6*wd-10:gosub9010:ap=0:e1=0:ab=ab+2*m%:gosub8995:goto160
+    */
+    line_700:
+	sk += 4 + number_of_guards/2;
+	ap++;
+	if (ap < (ho / 6) * wd)		/* when ho==25, must be 4*wd */
+	    goto line_250;
+	mvaddstr(0, 0, "wil je een vrij spel (j/n)? ");
+	if (!vb) {
+	    do {
+		inchar = input_with_timeout(-1);
+		if (inchar == 'n') {
+		    addstr("nee");
+		    refresh();
+		    ap = 0; goto line_250;	/* was 8550 */
+		    goto line_8550;
+		}
+	    } while (inchar != 'j');
+	}
+	addstr("ja");
+	refresh();
+	maze_screen_rebuild();
+	ap = 0;
+	e1 = 0;
+	ab += 2 * number_of_guards;
+	clear_topline(0);
     }
-    addstr("ja");
-    refresh();
-    player_pos.x = wd - 10;
-    player_pos.y = 5;
-    maze_screen_rebuild();
-    ap = 0;
-    e1 = 0;
-    ab += 2 * number_of_guards;
-    clear_topline(0);
-    goto line_160;
 /*
   999 rem"{rvs-shift-m}{up}{10 -}{rvs} *tekst*
  */
@@ -431,8 +477,10 @@ line_8500:;
  */
     for (i = 0; i < 10; i++) {
 	screenpoke(player_pos, jy);
+	refresh();
 	usleep(100*1000);
 	screenpoke(player_pos, be|A_REVERSE);
+	refresh();
 	usleep(100*1000);
     }
     sk /= 2;
@@ -636,6 +684,7 @@ place_blockade()
 line_2500:
     if (ab < 1) {
 	mvaddstr(0, 0, "je hebt geen blokkades meer!");
+	refresh();
 	clear_topline(60);
     } else {
 	mvaddstr(0, 0, "druk  richtingtoets  voor  blokkade  (0 voor geen)");
@@ -671,7 +720,8 @@ screenpoke(struct xy pos, chtype ch)
     getyx(stdscr, old_cursor_pos.y, old_cursor_pos.x);
     normalise_xy(&pos);
     mvaddch(pos.y, pos.x, ch);
-    refresh();
+    if (maze_delay_option >= 0)
+	refresh();
     move(old_cursor_pos.y, old_cursor_pos.x);
 }
 
@@ -710,7 +760,7 @@ make_maze()
     screenpoke(a, '@' + 4);
     for (;;) {
 top:
-	if (maze_delay_option)
+	if (maze_delay_option > 0)
 	    usleep(maze_delay_option * 100);
 	x = j = random() % 4;
 	do {
@@ -757,31 +807,31 @@ opening_screen()
     int ch;
 
     clear();
-    printw("intruder          kosmos s#28 v29.03.83\n");
-    printw("---------------------------------------\n");
-    printw("       _____________\n");
-    printw("       ");
+    addstr("intruder          kosmos s#28 v29.03.83\n");
+    addstr("---------------------------------------\n");
+    addstr("       _____________\n");
+    addstr("       ");
     attron(A_REVERSE);
-    printw("puntentelling");
+    addstr("puntentelling");
     attroff(A_REVERSE);
-    printw(":\n\n");
-    printw("         jij *\n");
-    printw("    blokkade Z houdt bewakers tegen\n");
-    printw("dubbele punt : 3-7 afh van # bewakers\n");
-    printw("  dokumenten Q 75 of 100\n");
-    printw("     bewaker $ 150\n");
-    printw("\n");
-    printw("\n");
-    printw("spel afgelopen als:\n");
-    printw("-Q bij uitgang gepakt, of\n");
-    printw("-geen punten meer, of\n");
-    printw("-$ grijpt jou (je skore halveert dan!)\n");
-    printw("de dan behaalde skore telt.\n");
-    printw("______________________________\n");
+    addstr(":\n\n");
+    addstr("         jij "); addch(jy); addstr("\n");
+    addstr("    blokkade "); addch(bl); addstr(" houdt bewakers tegen\n");
+    addstr("dubbele punt "); addch(pn); addstr(" 3-7 afh van # bewakers\n");
+    addstr("  dokumenten "); addch(en); addstr(" 75 of 100\n");
+    addstr("     bewaker "); addch(be); addstr(" 150\n");
+    addstr("\n");
+    addstr("\n");
+    addstr("spel afgelopen als:\n");
+    addch('-'); addch(en); addstr(" bij uitgang gepakt, of\n");
+    addstr("-geen punten meer, of\n");
+    addch('-'); addch(be); addstr(" grijpt jou (je skore halveert dan!)\n");
+    addstr("de dan behaalde skore telt.\n");
+    addstr("______________________________\n");
     attron(A_REVERSE);
-    printw("hoeveel bewakers wil je [1-9]?");
+    addstr("hoeveel bewakers wil je [1-9]?");
     attroff(A_REVERSE);
-    printw(" ");
+    addstr(" ");
 
     refresh();
     do {
@@ -817,7 +867,9 @@ void
 maze_screen()
 {
     clear();
-    printw("ga  naar  de  kluis  en  steel  geheime dokumenten (Q)...\n");
+    addstr("ga  naar  de  kluis  en  steel  geheime dokumenten (");
+    addch(en);
+    addstr(")...\n");
     maze_screen_rebuild();
 }
 
@@ -865,7 +917,7 @@ print_row()	/* helper function to print in$ */
 {
     int i;
 
-    addch('|');
+    addch(acs_ltee);
     for (i = 0; i < wd - 11; i++)
 	addch(mr);
 }
@@ -873,34 +925,66 @@ print_row()	/* helper function to print in$ */
 void
 maze_screen_rebuild()
 {
-    mvaddch(2, 0, '#');
+    player_pos.y = 5;
+    player_pos.x = wd - 10;
+
+    mvaddch(2, 0, acs_ulcorner);
     for (i = 0; i < wd - 11; i++) {
-	addch('-');
+	addch(acs_ttee);
     }
-    addstr("#_____\n");
-    print_row(); addstr("|"); print_score();
-    print_row(); addstr("#-----#\n");
-    print_row(); addstr(" <- in|\n");
-    print_row(); addstr("##gang|\n");
-    print_row(); addstr("|#----#\n");
+    addch(acs_urcorner);
+    addch('\n');
+    print_row(); addch(acs_rtee); print_score();
+    print_row(); addch(acs_btee);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_urcorner);
+	         addch('\n');
+    print_row(); addstr(" <- in"); addch(acs_vline); addch('\n');
+    print_row(); addch(acs_ttee); addch(acs_urcorner);
+		 addstr("gang"); addch(acs_vline); addch('\n');
+    print_row(); addch(acs_rtee);
+		 addch(acs_llcorner);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_hline);
+	         addch(acs_hline);
+		 addch(acs_lrcorner);
+	         addch('\n');
     for (i = 0; i < ho - 20; i++) {
-	print_row(); addstr("|\n");
+	print_row(); addch(acs_rtee); addch('\n');
     }
-    print_row(); addstr("|"); addch('b'|A_REVERSE); addstr("lok-\n");
-    print_row(); addstr("| kade\n");
-    print_row(); addstr("|"); addch('q'|A_REVERSE); addstr("uit\n");
-    print_row(); addstr("|7 8 9\n");
-    print_row(); addstr("|  |  \n");
-    print_row(); addstr("|4-"); addch('*'|A_REVERSE); addstr("-6\n");
-    print_row(); addstr("|  |  \n");
-    addch('#');
+    print_row(); addch(acs_rtee); addch('b'|A_REVERSE); addstr("lok-\n");
+    print_row(); addch(acs_rtee); addstr(" kade\n");
+    print_row(); addch(acs_rtee); addch('q'|A_REVERSE); addstr("uit\n");
+    print_row(); addch(acs_rtee); addstr("7 8 9\n");
+    print_row(); addch(acs_rtee); addch(' ');
+				  addch(acs_ulcorner);
+				  addch(acs_btee);
+				  addch(acs_urcorner);
+				  addch('\n');
+    print_row(); addch(acs_rtee); addch('4');
+				  addch(acs_rtee);
+			          addch('*'|A_REVERSE);
+				  addch(acs_ltee);
+				  addstr("6\n");
+    print_row(); addch(acs_rtee); addch(' ');
+				  addch(acs_llcorner);
+				  addch(acs_ttee);
+				  addch(acs_lrcorner);
+				  addch('\n');
+    addch(acs_llcorner);
     for (i = 0; i < wd - 11; i++) {
-	addch('-');
+	addch(acs_btee);
     }
-    addstr("#1 2 3\n");
+    addch(acs_lrcorner);
+    addstr("1 2 3\n");
 
     i = (wd - 40) / 2;
-    mvaddstr(getcury(stdscr), i, "$=bewaker      *=jij     Q=doel\n");
+    mvaddstr(getcury(stdscr), i, "$=bewaker      *=jij     ");addch(en);addstr("=doel\n");
     mvaddstr(getcury(stdscr), i, "     ***");
 	    attron(A_REVERSE); addstr("even geduld aub"); attroff(A_REVERSE);
 	    addstr("***");
@@ -918,12 +1002,20 @@ maze_screen_rebuild()
     }
 
     i = 1 + random() % (wd - 17);
-    j = 3 + random() % 12;
-    mvaddstr(j,   i, "### ###");
-    mvaddstr(j+1, i, "# Z Z #");
-    mvaddstr(j+2, i, "   Q   ");
-    mvaddstr(j+3, i, "# Z Z #");
-    mvaddstr(j+4, i, "### ###");
+    j = 3 + random() % (ho - 14);
+    move(j  ,i); addch(acs_ckboard);addch(acs_ckboard);addch(acs_ckboard);
+	         addch(' ');
+                 addch(acs_ckboard);addch(acs_ckboard);addch(acs_ckboard);
+    move(j+1,i); addch(acs_ckboard);addch(' ');addch(bl);
+	         addch(' ');
+                 addch(bl);addch(' ');addch(acs_ckboard);
+    mvaddstr(j+2, i, "   "); addch(en); addstr("   ");
+    move(j+3,i); addch(acs_ckboard);addch(' ');addch(bl);
+	         addch(' ');
+                 addch(bl);addch(' ');addch(acs_ckboard);
+    move(j+4,i); addch(acs_ckboard);addch(acs_ckboard);addch(acs_ckboard);
+	         addch(' ');
+                 addch(acs_ckboard);addch(acs_ckboard);addch(acs_ckboard);
 
     refresh();
 
