@@ -40,18 +40,21 @@
 .Op Fl f
 .Op Fl r
 .\" .Op Fl d
-.Sh DESCRIPTION
-The following options are available:
+.Sh OPTIONS
 .Bl -tag -width indent
 .It Fl d Ar delay
 When designing the maze, do it slowly so you can see it.
+When specifying
+.Ar -1
+the number of screen updates is minimized
+(for use on slow serial lines).
 .It Fl f
 Fast start, no autoplay at the start.
 .It Fl r
 Rogue keyboard mode.
 .El
 .\" .Op Fl d
-.Pp
+.Sh DESCRIPTION
 .Nm
 is a pac-man-like game with a new twist.
 It is CRT oriented and the object of the game is to go through a maze,

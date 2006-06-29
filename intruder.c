@@ -1,5 +1,5 @@
 /*
- * $Id: intruder.c,v 1.2 2006/06/24 09:28:08 rhialto Exp $
+ * $Id: intruder.c,v 1.3 2006/06/29 21:51:52 rhialto Exp $
  *
  * Intruder.
  *
@@ -243,8 +243,9 @@ line_110:
     ab = 0; e1 = 0;
     hm = 32768;
     getmaxyx(stdscr, ho, wd);
+    ho += 2;		/* fake extra lines, the code does not use them all */
     if (ho < 25 || wd < 40) {
-	mvaddstr(0, 0, "Need a terminal of at least 40 x 25\n");
+	mvaddstr(0, 0, "Need a terminal of at least 40 x 23\n");
 	refresh();
 	return;
     }
@@ -576,7 +577,7 @@ print_score()
 {
     move(3, wd - 9);
     attron(A_REVERSE);
-    printw("%5d\n", sk);
+    printw("%5d", sk);
     attroff(A_REVERSE);
     refresh();
 }
@@ -934,7 +935,7 @@ maze_screen_rebuild()
     }
     addch(acs_urcorner);
     addch('\n');
-    print_row(); addch(acs_rtee); print_score();
+    print_row(); addch(acs_rtee); print_score(); addch('\n');
     print_row(); addch(acs_btee);
 	         addch(acs_hline);
 	         addch(acs_hline);
@@ -992,7 +993,7 @@ maze_screen_rebuild()
     make_maze();
 
     i = (wd - 40) / 2;
-    mvaddstr(getcury(stdscr), i, "                               \n");
+    mvaddstr(getcury(stdscr), i, "                               ");
     if (vb) {
 	mvaddstr(getcury(stdscr), i, "***");
 	    attron(A_REVERSE); addstr("voorbeeld"); attroff(A_REVERSE);
