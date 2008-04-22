@@ -1,5 +1,5 @@
 /*
- * $Id: intruder.c,v 1.3 2006/06/29 21:51:52 rhialto Exp $
+ * $Id: intruder.c,v 1.4 2008/04/22 19:22:45 rhialto Exp $
  *
  * Intruder.
  *
@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <unistd.h>
@@ -23,6 +24,10 @@ int maze_delay_option;
 int no_autoplay_option;
 int rogue_option;
 int use_ascii_option;
+#define DIAGONAL_AUTOPLAY_ON	1
+#define DIAGONAL_AUTOPLAY_OFF	2
+int diagonal_autoplay_option = DIAGONAL_AUTOPLAY_OFF;
+int random_direction_option = 0;
 chtype blockade_key;
 chtype acs_plus, acs_lrcorner, acs_urcorner, acs_llcorner, acs_ulcorner,
        acs_hline, acs_ttee, acs_btee, acs_vline, acs_rtee, acs_ltee,
@@ -100,12 +105,22 @@ subtract_xy_twice(struct xy a, struct xy b)
     return a;
 }
 
-struct xy player_pos, dx, a_xy[10+26];
+struct xy player_pos, dx, a_xy[10+26+1];
 struct xy a_a[4] = {
     {  1,  0 },
     {  0, -1 },
     { -1,  0 },
     {  0,  1 },
+};
+struct xy b_a[8] = {
+    {  1,  0 },
+    {  1, -1 },
+    {  0, -1 },
+    { -1, -1 },
+    { -1,  0 },
+    { -1,  1 },
+    {  0,  1 },
+    {  1,  1 },
 };
 
 void
@@ -138,7 +153,7 @@ main(int argc, char **argv)
     extern char *optarg;
     extern int optind;
 
-    while ((ch = getopt(argc, argv, "afd:r")) != -1) {
+    while ((ch = getopt(argc, argv, "afd:in:r")) != -1) {
 	switch (ch) {
 	case 'a':
 	    use_ascii_option = 1;
@@ -148,6 +163,12 @@ main(int argc, char **argv)
 	    break;
 	case 'f':
 	    no_autoplay_option = 1;
+	    break;
+	case 'i':
+	    diagonal_autoplay_option = DIAGONAL_AUTOPLAY_ON;
+	    break;
+	case 'n':
+	    random_direction_option = atoi(optarg);
 	    break;
 	case 'r':
 	    rogue_option = 1;
@@ -228,7 +249,7 @@ intruder10,prg ==0401==
     bl = acs_diamond;	/* blokkade */
     en = acs_block;	/* eind - dokumenten */
     if (lineno < 100 && !no_autoplay_option) {
-	d0 = 2;
+	d0 = 4;
 	number_of_guards = 1 + random() % 9;
 	vb = 1;
 	goto line_110;
@@ -484,6 +505,7 @@ line_8500:;
 	refresh();
 	usleep(100*1000);
     }
+    mvaddstr(0, 0, "de bewaker heeft je gevangen: het spel  is afgelopen.");
     sk /= 2;
     print_score();
     goto line_8550;
@@ -564,7 +586,12 @@ input_with_timeout(int msec)
 
     refresh();
     timeout(msec);
-    in = getch();
+    for (;;) {
+	in = getch();
+	if (in != '\f')
+	    break;
+	refresh();
+    }
     return in;
 }
 
@@ -640,36 +667,43 @@ auto_pilot()
     if (inchar != ERR) {
 	longjmp(rerun, 100);
     }
+    if ((random() % 1000) < random_direction_option) {
+	d0 = random() % 8;
+	if (diagonal_autoplay_option == DIAGONAL_AUTOPLAY_OFF)
+	    d0 &= ~1;
+    }
+#if 0
+    if ((random() % 1000) < 0) {
+	diagonal_autoplay_option = DIAGONAL_AUTOPLAY_ON +
+		DIAGONAL_AUTOPLAY_OFF - diagonal_autoplay_option;
+	d0 &= ~1;
+    }
+#endif
     j = d0;
     do {
-	dx = a_a[d0];
-	line_2110();
-	if (i != 0) {
-	    print_score();
-	    return;
-	}
-	if (--d0 < 0)
-	    d0 = 3;
-    } while (d0 != j);
-    mvaddstr(0, 0, "ik geef het  op,   want  ik  heb  geen  blokkades meer!");
-    refresh();
-    clear_topline(60);
-}
+	dx = b_a[d0];
 /*
  2110 i=0:pw=peek(xy+dx):ifpw=sporpw=enorpw=pntheni=1
  2120 ifi=1thend0=d0+1:ifd0>3thend0=0
  2130 return
  */
-void
-line_2110()
-{
-    i = 0;
-    pw = screenpeek(add_xy(player_pos, dx));
-    if (pw == sp || pw == en || pw == pn)
-	i = 1;
-    if (i)
-	d0 = (d0 + 1) % 4;
+	pw = screenpeek(add_xy(player_pos, dx));
+	if (pw == sp || pw == en || pw == pn) {
+	    /* It's just a step to the left */
+	    d0 = (d0 + 4 - diagonal_autoplay_option) % 8;
+	    return;
+	}
+	/* and then a jump to the right */
+	d0 -= diagonal_autoplay_option;
+	if (d0 < 0)
+	    d0 += 8;
+	/* let's do the timewarp again */
+    } while (d0 != j);
+    mvaddstr(0, 0, "ik geef het  op,   want  ik  heb  geen  blokkades meer!");
+    refresh();
+    clear_topline(60);
 }
+
 /*
  2500 ifab<1thenprint"{home}je hebt geen blokkades meer!":t=60:goto8990
  2505 print"{home}druk  richtingtoets  voor  blokkade  (0 voor geen)
@@ -719,7 +753,7 @@ screenpoke(struct xy pos, chtype ch)
     struct xy old_cursor_pos;
 
     getyx(stdscr, old_cursor_pos.y, old_cursor_pos.x);
-    normalise_xy(&pos);
+    /*normalise_xy(&pos);*/
     mvaddch(pos.y, pos.x, ch);
     if (maze_delay_option >= 0)
 	refresh();
