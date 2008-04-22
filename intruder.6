@@ -36,12 +36,17 @@
 .Nd go to the safe, steal the secret documents, and escape
 .Sh SYNOPSIS
 .Nm
+.Op Fl a
 .Op Fl d Ar delay
 .Op Fl f
 .Op Fl r
 .\" .Op Fl d
 .Sh OPTIONS
 .Bl -tag -width indent
+.It Fl a
+ASCII mode.
+Specify this if your terminal doesn't support ACS,
+the Alternate Character Set.
 .It Fl d Ar delay
 When designing the maze, do it slowly so you can see it.
 When specifying
@@ -82,7 +87,7 @@ liberating the secret documents.
 .Pp
 You move around with the numbers 1-9 of the numeric keypad,
 or hjkl and yubn for diagonal movent as in rogue,
-or (for convenience on laptops without numberic keypad) with the arrow
+or (for convenience on laptops without numeric keypad) with the arrow
 keys and Home/PgUp/End/PgDn for 7/9/1/3.
 .Pp
 There are guards
@@ -100,6 +105,7 @@ from the floor.
 If you move around, you lose points.
 If you have no points left over, you have lost.
 .Pp
+.\"In the 21st century everything^W
 The maze changes.
 Walls
 .Ic \&+
