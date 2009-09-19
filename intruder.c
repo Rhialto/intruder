@@ -20,7 +20,12 @@ struct xy {
     int y;
 };
 
+#ifdef HAVE_WCHAR
+#define CURSES_INCH_STRIPS_OFF_ATTRIBUTES		1
+#endif
+
 int maze_delay_option;
+int maze_change_speed_option = 100;
 int no_autoplay_option;
 int rogue_option;
 int use_ascii_option;
@@ -31,7 +36,7 @@ int random_direction_option = 0;
 chtype blockade_key;
 chtype acs_plus, acs_lrcorner, acs_urcorner, acs_llcorner, acs_ulcorner,
        acs_hline, acs_ttee, acs_btee, acs_vline, acs_rtee, acs_ltee,
-       acs_diamond, acs_ckboard, acs_block;
+       acs_diamond, acs_ckboard, acs_block, acs_bullet;
 
 void intruder(int lineno);
 void make_maze();
@@ -153,7 +158,7 @@ main(int argc, char **argv)
     extern char *optarg;
     extern int optind;
 
-    while ((ch = getopt(argc, argv, "afd:in:r")) != -1) {
+    while ((ch = getopt(argc, argv, "ad:fim:n:r")) != -1) {
 	switch (ch) {
 	case 'a':
 	    use_ascii_option = 1;
@@ -166,6 +171,9 @@ main(int argc, char **argv)
 	    break;
 	case 'i':
 	    diagonal_autoplay_option = DIAGONAL_AUTOPLAY_ON;
+	    break;
+	case 'm':
+	    maze_change_speed_option = atoi(optarg);
 	    break;
 	case 'n':
 	    random_direction_option = atoi(optarg);
@@ -200,6 +208,7 @@ main(int argc, char **argv)
 	acs_diamond = 'Z';
 	acs_ckboard = '#';
 	acs_block = 'O';
+	acs_bullet = 'o';
     } else {
 	/* must be used after initscr */
 	acs_plus = ACS_PLUS;
@@ -216,6 +225,7 @@ main(int argc, char **argv)
 	acs_diamond = ACS_DIAMOND;
 	acs_ckboard = ACS_CKBOARD;
 	acs_block = ACS_BLOCK;
+	acs_bullet = ACS_BULLET;
     }
 
     srandom((unsigned long)time(NULL));
@@ -255,6 +265,7 @@ intruder10,prg ==0401==
 	goto line_110;
     }
     opening_screen();
+
 /*
   110 hm=32768:print"{clr}{down}a":wd=40:ifpeek(hm+wd)<>1thenwd=80
   120 i0=j0=i1=i=j=0:xy=hm+6*wd-10:jy=42:sk=10:sp=32:mr=91:pn=58:be=36:bl=90
@@ -442,7 +453,13 @@ line_110:
 	440 pokej,pn+i*(mr-pn)
 	450 next:goto200
 	*/
-	    for (j = (ho / 15); j > 0; j--) {	/* when ho==25, j must be 1 */
+	    /*
+	     * When ho==25, wd==80, mcse==100, increment must be 100
+	     * to keep to 1 change per turn on the original screen size.
+	     */
+	    static int maze_changes = 0;
+	    maze_changes += (ho * wd * maze_change_speed_option) / (25*80);
+	    for (; maze_changes >= 100; maze_changes -= 100) {
 		for (i = 0; i <= 1; i++) {
 		    struct xy j;
 		    j.x = 1 + random() % (wd - 11);
@@ -766,10 +783,20 @@ screenpeek(struct xy pos)
     struct xy old_cursor_pos;
     chtype ch;
 
-    getyx(stdscr, old_cursor_pos.y, old_cursor_pos.x);
     normalise_xy(&pos);
+    getyx(stdscr, old_cursor_pos.y, old_cursor_pos.x);
+
+#if CURSES_INCH_STRIPS_OFF_ATTRIBUTES
+    /* See curs_in_wch(3X) */
+    cchar_t wch;
+
+    mvwin_wch(stdscr, pos.y, pos.x, &wch);
+    ch = wch.vals[0] | (wch.attributes & WA_ALTCHARSET);
+#else
     move(pos.y, pos.x);
     ch = inch();
+#endif
+
     move(old_cursor_pos.y, old_cursor_pos.x);
 
     return ch;

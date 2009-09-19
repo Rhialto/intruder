@@ -28,7 +28,7 @@
 .\" SUCH DAMAGE.
 .\"
 .\"
-.Dd June 9, 2006
+.Dd September 18, 2009
 .Dt INTRUDER 6
 .Os
 .Sh NAME
@@ -39,8 +39,10 @@
 .Op Fl a
 .Op Fl d Ar delay
 .Op Fl f
+.Op Fl i
+.Op Fl m Ar speed
+.Op Fl n Ar promillage
 .Op Fl r
-.\" .Op Fl d
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl a
@@ -55,10 +57,21 @@ the number of screen updates is minimized
 (for use on slow serial lines).
 .It Fl f
 Fast start, no autoplay at the start.
+.It Fl i
+Use diagonal moves during autoplay.
 .It Fl r
 Rogue keyboard mode.
+.It Fl m Ar speed
+Maze morph speed.
+The nominal value is 100.
+Note that the speed as measured in "changes per turn"
+scales with its size.
+.It Fl n Ar promillage
+During autoplay, make some random moves every now and then.
+with a chance of
+.Ar promillage
+promille.
 .El
-.\" .Op Fl d
 .Sh DESCRIPTION
 .Nm
 is a pac-man-like game with a new twist.
