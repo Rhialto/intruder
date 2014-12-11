@@ -1,0 +1,17 @@
+Makefile
+intruder.c
+intruder.6
+intruder.cat6
+    Download these to rebuild it for your own BSD unix system.
+
+intruder.basic
+    Listing of the original program.
+
+intruder10
+intruder10,prg
+    The original PET Basic files, usable in VICE.
+    xpet -default -warp -model 3032 -Crtcdsize +sound -autostart intruder10,prg
+    or                  -model 8032
+
+intruder_demo.png
+    A screenshot from VICE.
