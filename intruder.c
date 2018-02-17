@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <unistd.h>
+#include <time.h>
 #include <curses.h>
 
 /* Emulation of screen position by an x,y pair */
